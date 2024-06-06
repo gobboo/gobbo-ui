@@ -1,0 +1,92 @@
+--[[
+	GOBBO UI - Copyright Notice
+	© 2023 Thomas O'Sullivan - All rights reserved
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+--]]
+
+local PANEL = {}
+
+AccessorFunc(PANEL, "Text", "Text", FORCE_STRING)
+AccessorFunc(PANEL, "ButtonText", "ButtonText", FORCE_STRING)
+
+GOBBO.RegisterFont("UI.Message", "Open Sans SemiBold", 18)
+
+function PANEL:Init()
+    self:SetDraggable(true)
+    self:SetSizable(true)
+
+    self:SetMinWidth(GOBBO.Scale(240))
+    self:SetMinHeight(GOBBO.Scale(80))
+
+    self.Message = vgui.Create("GOBBO.Label", self)
+    self.Message:SetTextAlign(TEXT_ALIGN_CENTER)
+    self.Message:SetFont("UI.Message")
+
+    self.ButtonHolder = vgui.Create("Panel", self)
+
+    self.Button = vgui.Create("GOBBO.TextButton", self.ButtonHolder)
+    self.Button.DoClick = function(s, w, h)
+        self:Close(true)
+    end
+end
+
+function PANEL:LayoutContent(w, h)
+    self.Message:SetSize(self.Message:CalculateSize())
+    self.Message:Dock(TOP)
+    self.Message:DockMargin(0, 0, 0, GOBBO.Scale(8))
+
+    self.Button:SizeToText()
+    self.ButtonHolder:Dock(TOP)
+    self.ButtonHolder:SetTall(self.Button:GetTall())
+    self.Button:CenterHorizontal()
+
+    if self.ButtonHolder:GetWide() < self.Button:GetWide() then
+        self.ButtonHolder:SetWide(self.Button:GetWide())
+    end
+
+    if self:GetWide() < GOBBO.Scale(240) then
+        self:SetWide(GOBBO.Scale(240))
+        self:Center()
+    end
+
+    if self.HasSized and self.HasSized > 1 then return end
+    self.HasSized = (self.HasSized or 0) + 1
+
+    self:SizeToChildren(true, true)
+    self:Center()
+end
+
+function PANEL:SetText(text) self.Message:SetText(text) end
+function PANEL:GetText(text) return self.Message:GetText() end
+
+function PANEL:SetButtonText(text) self.Button:SetText(text) end
+function PANEL:GetButtonText(text) return self.Button:GetText() end
+
+vgui.Register("GOBBO.Message", PANEL, "GOBBO.Frame")
+
+GOBBO.UI.Overrides.Derma_Message = GOBBO.UI.Overrides.Derma_Message or Derma_Message
+
+Derma_Message = GOBBO.UI.CreateToggleableOverride(GOBBO.UI.Overrides.Derma_Message, function(text, title, buttonText)
+    buttonText = buttonText or "OK"
+
+    local msg = vgui.Create("GOBBO.Message")
+    msg:SetTitle(title)
+    msg:SetText(text)
+    msg:SetButtonText(buttonText)
+
+    msg:MakePopup()
+    msg:DoModal()
+
+    return msg
+end, GOBBO.UI.ShouldOverrideDermaPopups)
